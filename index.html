@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>andaza · order of magnitude dojo</title>
+<style>
+  :root{
+    --bg:#08090c; --panel:#0e1117; --line:#1c2431; --grid:#263040;
+    --ink:#dfe9f5; --dim:#7d8ba0; --cyan:#7fd8ff; --warm:#ffb36b; --good:#8effb1; --bad:#ff8e8e;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--mono);min-height:100%}
+  body{display:flex;justify-content:center;padding:20px 14px 60px}
+  .wrap{width:100%;max-width:640px}
+  header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+  h1{font-size:20px;letter-spacing:4px;font-weight:600}
+  h1 span{color:var(--cyan)}
+  .tag{font-size:10px;color:var(--dim);letter-spacing:1px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px}
+  .qmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:12px}
+  .qtext{font-size:17px;line-height:1.5;margin-bottom:20px}
+  .lbl{font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{flex:1;min-width:52px;padding:10px 0;text-align:center;border:1px solid var(--grid);border-radius:6px;background:transparent;color:var(--ink);font-family:var(--mono);font-size:15px;cursor:pointer}
+  .chip.sel{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:28px;cursor:pointer}
+  .exp-row{display:flex;align-items:center;gap:12px}
+  .exp-row button{width:44px;height:38px;font-size:18px;border:1px solid var(--grid);border-radius:6px;background:transparent;color:var(--ink);cursor:pointer;font-family:var(--mono)}
+  .readout{text-align:center;margin:22px 0 6px;font-size:26px}
+  .readout sup{font-size:14px;color:var(--cyan)}
+  .readout .unit{font-size:13px;color:var(--dim)}
+  .human{text-align:center;font-size:12px;color:var(--dim);min-height:16px;margin-bottom:18px}
+  .btn{display:block;width:100%;padding:14px;border:1px solid var(--cyan);border-radius:6px;background:transparent;color:var(--cyan);font-family:var(--mono);font-size:14px;letter-spacing:3px;cursor:pointer;text-transform:uppercase}
+  .btn:active{background:rgba(127,216,255,.1)}
+  .btn.ghost{border-color:var(--grid);color:var(--dim);letter-spacing:2px}
+  canvas{width:100%;display:block;margin:6px 0 14px}
+  .grade{font-size:18px;letter-spacing:3px;text-align:center;margin-bottom:4px}
+  .pts{text-align:center;font-size:12px;color:var(--dim);margin-bottom:14px}
+  .deriv{font-size:13px;line-height:1.6;color:var(--ink);border-left:2px solid var(--cyan);padding:2px 0 2px 12px;margin-bottom:20px}
+  .deriv b{color:var(--cyan);font-weight:600}
+  .statrow{display:flex;gap:10px;margin:18px 0}
+  .stat{flex:1;border:1px solid var(--line);border-radius:6px;padding:12px;text-align:center}
+  .stat .v{font-size:20px;color:var(--cyan)}
+  .stat .k{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+  .verdict{font-size:13px;line-height:1.6;color:var(--dim);text-align:center;margin:14px 0 20px}
+  .verdict b{color:var(--warm)}
+  .intro{font-size:13px;line-height:1.7;color:var(--dim);margin-bottom:22px}
+  .intro b{color:var(--ink)}
+  .life{font-size:11px;color:var(--dim);text-align:center;margin-top:14px;letter-spacing:1px}
+  footer{margin-top:26px;font-size:10px;color:var(--dim);text-align:center;letter-spacing:1px}
+  footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ANDA<span>ZA</span></h1>
+    <div class="tag">order of magnitude dojo</div>
+  </header>
+
+  <!-- HOME -->
+  <div class="screen on" id="scr-home">
+    <div class="card">
+      <p class="intro">
+        Ten questions about the real world. You don't answer with a number, you answer with a
+        <b>power of ten</b>: pick a mantissa, slide the exponent, lock it in.<br><br>
+        Being wrong is fine. Being wrong by <b>three orders of magnitude</b> is what this dojo trains out of you.
+        Every reveal shows the Fermi decomposition, so you learn to derive, not memorise.
+      </p>
+      <button class="btn" id="btn-start">Begin round</button>
+      <div class="life" id="life-home"></div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="scr-quiz">
+    <div class="card">
+      <div class="qmeta"><span id="q-num"></span><span id="q-score"></span></div>
+      <div class="qtext" id="q-text"></div>
+      <div class="lbl">mantissa</div>
+      <div class="chips" id="chips"></div>
+      <div class="lbl">exponent: 10^<span id="exp-val">6</span></div>
+      <div class="exp-row">
+        <button id="exp-dn">−</button>
+        <input type="range" id="exp" min="-7" max="22" step="1" value="6">
+        <button id="exp-up">+</button>
+      </div>
+      <div class="readout" id="readout"></div>
+      <div class="human" id="human"></div>
+      <button class="btn" id="btn-lock">Lock it in</button>
+    </div>
+  </div>
+
+  <!-- REVEAL -->
+  <div class="screen" id="scr-reveal">
+    <div class="card">
+      <div class="qmeta"><span id="r-num"></span><span id="r-score"></span></div>
+      <div class="grade" id="r-grade"></div>
+      <div class="pts" id="r-pts"></div>
+      <canvas id="cv-axis" height="170"></canvas>
+      <div class="deriv" id="r-deriv"></div>
+      <button class="btn" id="btn-next">Next</button>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="screen" id="scr-sum">
+    <div class="card">
+      <div class="grade" style="margin-bottom:14px">ROUND COMPLETE</div>
+      <div class="statrow">
+        <div class="stat"><div class="v" id="s-score"></div><div class="k">score / 1000</div></div>
+        <div class="stat"><div class="v" id="s-miss"></div><div class="k">avg miss (orders)</div></div>
+        <div class="stat"><div class="v" id="s-bulls"></div><div class="k">bullseyes</div></div>
+      </div>
+      <div class="lbl" style="text-align:center">calibration: where your guesses landed</div>
+      <canvas id="cv-cal" height="140"></canvas>
+      <div class="verdict" id="s-verdict"></div>
+      <button class="btn" id="btn-again">Another round</button>
+      <div class="life" id="life-sum"></div>
+    </div>
+  </div>
+
+  <footer>no lookups allowed. estimate, then decompose. · <a href="https://vaibhavkumar.is-a.dev/">vaibhav</a></footer>
+</div>
+
+<script>
+"use strict";
+/* ---------- question bank ---------- */
+const QS = [
+ {q:"How many seconds are there in one year?", u:"seconds", a:3.15e7, d:"365 days × 86,400 seconds = 31.5 million. Worth memorising: one year ≈ <b>π × 10^7 s</b>."},
+ {q:"How many times does a human heart beat in a lifetime?", u:"beats", a:2.8e9, d:"70 beats/min × 60 × 24 × 365 × 75 years ≈ <b>2.8 billion</b>. Nearly every mammal gets ~1 billion; we tripled ours."},
+ {q:"How many breaths do you take in one day?", u:"breaths", a:2e4, d:"About 14 per minute × 1,440 minutes in a day ≈ <b>20,000</b>."},
+ {q:"How many cells make up the human body?", u:"cells", a:3.7e13, d:"Best current estimate: <b>37 trillion</b>, and most of them are red blood cells."},
+ {q:"How many neurons are in the human brain?", u:"neurons", a:8.6e10, d:"<b>86 billion</b>, measured by dissolving brains into soup and counting sampled nuclei."},
+ {q:"How many hairs are on a typical human head?", u:"hairs", a:1e5, d:"Density ~200 per cm² over ~500 cm² of scalp ≈ <b>100,000</b>."},
+ {q:"What is the combined mass of all living humans?", u:"kg", a:5e11, d:"8 billion people × 62 kg average = <b>5 × 10^11 kg</b>: half a billion tonnes."},
+ {q:"How many trees are on Earth?", u:"trees", a:3e12, d:"Satellite surveys anchored to ground plots: <b>~3 trillion</b>, about 400 per person."},
+ {q:"How many ants are alive on Earth right now?", u:"ants", a:2e16, d:"The 2022 census says <b>20 quadrillion</b>: about 2.5 million ants per human."},
+ {q:"How many stars are in the Milky Way?", u:"stars", a:2e11, d:"Galactic mass ÷ average star mass lands between 100 and 400 billion: call it <b>2 × 10^11</b>."},
+ {q:"How many galaxies are in the observable universe?", u:"galaxies", a:2e12, d:"Count a deep-field patch, multiply over the whole sky: <b>~2 trillion</b>."},
+ {q:"How many atoms are in a single grain of sand?", u:"atoms", a:3e19, d:"1 mg of quartz ÷ 60 g/mol × 6×10^23 molecules × 3 atoms each ≈ <b>3 × 10^19</b>."},
+ {q:"What is the mass of Earth's entire atmosphere?", u:"kg", a:5.1e18, d:"Sea-level pressure means <b>~10 tonnes of air above every m²</b>, × 5.1 × 10^14 m² of surface."},
+ {q:"How much water do all the oceans hold?", u:"litres", a:1.3e21, d:"1.3 billion km³, and each km³ is 10^12 litres: <b>1.3 × 10^21 L</b>."},
+ {q:"How many commercial flights take off worldwide per day?", u:"flights", a:1e5, d:"About 40 million flights a year ÷ 365 ≈ <b>100,000 a day</b>."},
+ {q:"How many cars exist in the world?", u:"cars", a:1.5e9, d:"<b>~1.5 billion</b>: roughly one car for every 5 to 6 humans."},
+ {q:"How many searches does Google handle per day?", u:"searches", a:1.4e10, d:"Google's own figure is 5 trillion a year: ÷ 365 ≈ <b>14 billion a day</b>."},
+ {q:"How many emails are sent worldwide per day?", u:"emails", a:3.6e11, d:"<b>~360 billion</b>, and the majority is machine-generated."},
+ {q:"How many cups of chai does India drink per day?", u:"cups", a:1.5e9, d:"1.4 billion people × a bit over one cup each ≈ <b>1.5 billion cups</b>. Every single day."},
+ {q:"How much milk does India produce per day?", u:"litres", a:6e8, d:"~240 million tonnes a year ÷ 365 ≈ <b>650 million kg a day</b>. India is #1 worldwide."},
+ {q:"How much rice does India eat per day?", u:"kg", a:3e8, d:"~110 million tonnes a year ÷ 365 ≈ <b>300 million kg a day</b>."},
+ {q:"How many auto-rickshaws run in India?", u:"autos", a:6e6, d:"Registered three-wheelers: <b>~6 million</b>, about one per 230 people."},
+ {q:"What is the total length of India's road network?", u:"km", a:6.3e6, d:"<b>6.3 million km</b>: the second largest network on Earth after the USA."},
+ {q:"How many times does a car tyre rotate in its lifetime?", u:"rotations", a:2.5e7, d:"50,000 km of tyre life ÷ 2 m per revolution = <b>25 million turns</b>."},
+ {q:"How many golf balls would fit inside a school bus?", u:"balls", a:5e5, d:"Bus ~70 m³ ÷ ball ~40 cm³, keep ~30% for packing gaps ≈ <b>500,000</b>."},
+ {q:"What is the mass of one mosquito?", u:"kg", a:2.5e-6, d:"<b>2.5 milligrams</b>: it takes 400,000 mosquitoes to make one kilogram."},
+ {q:"How thick is a human hair?", u:"metres", a:7e-5, d:"~70 microns = <b>7 × 10^-5 m</b>: about 14 hairs stacked per millimetre."},
+ {q:"How far does light travel in one nanosecond?", u:"metres", a:0.3, d:"<b>30 cm</b>. Grace Hopper handed out wires this long and called them nanoseconds."},
+ {q:"How many piano tuners work in Chicago?", u:"tuners", a:1.3e2, d:"Fermi's original: pianos in the city ÷ tunings one tuner does a year ≈ <b>~125</b>."},
+ {q:"How many words does the average person speak per day?", u:"words", a:1.6e4, d:"Recorder studies: <b>~16,000</b>, with men and women nearly identical."}
+];
+const ROUND = 10;
+const MANTISSAS = [1, 1.5, 2, 3, 5, 7];
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const dpr = window.devicePixelRatio || 1;
+
+function fmt(x){ // <=3 sig figs, trimmed
+  const s = Number(x.toPrecision(3));
+  return String(s);
+}
+function sciParts(v){
+  const e = Math.floor(Math.log10(v));
+  return {m: fmt(v / Math.pow(10, e)), e};
+}
+function sciHTML(v){
+  const p = sciParts(v);
+  return p.m + " × 10<sup>" + p.e + "</sup>";
+}
+function words(v){
+  if (v >= 1e24) return fmt(v/1e24) + " septillion";
+  const names = [["sextillion",1e21],["quintillion",1e18],["quadrillion",1e15],["trillion",1e12],["billion",1e9],["million",1e6],["thousand",1e3]];
+  for (const [n, s] of names) if (v >= s) return fmt(v/s) + " " + n;
+  if (v >= 1) return fmt(v);
+  return v.toFixed(Math.min(9, Math.max(1, -Math.floor(Math.log10(v)) + 1)));
+}
+function indian(v){
+  if (v >= 1e12) return fmt(v/1e12) + " lakh crore";
+  if (v >= 1e7)  return fmt(v/1e7)  + " crore";
+  if (v >= 1e5)  return fmt(v/1e5)  + " lakh";
+  return "";
+}
+
+/* ---------- state ---------- */
+let order = [], qi = 0, score = 0, results = [];
+let m = 1, e = 6;
+
+const LS = "andaza_life";
+function life(){ try { return JSON.parse(localStorage.getItem(LS)) || {rounds:0, n:0, sumAbs:0, sumSigned:0}; } catch(_) { return {rounds:0, n:0, sumAbs:0, sumSigned:0}; } }
+function saveLife(l){ try { localStorage.setItem(LS, JSON.stringify(l)); } catch(_){} }
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
+  $(id).classList.add("on");
+}
+
+/* ---------- quiz ---------- */
+function shuffle(a){
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function startRound(fixed){
+  order = fixed ? QS.map((_, i) => i).slice(0, ROUND)
+                : shuffle(QS.map((_, i) => i)).slice(0, ROUND);
+  qi = 0; score = 0; results = [];
+  showQuiz();
+}
+function showQuiz(){
+  const Q = QS[order[qi]];
+  m = 1; e = 6;
+  $("q-num").textContent = "Q " + (qi + 1) + " / " + ROUND;
+  $("q-score").textContent = "score " + score;
+  $("q-text").textContent = Q.q;
+  $("exp").value = e;
+  syncChips();
+  syncReadout();
+  show("scr-quiz");
+}
+function syncChips(){
+  document.querySelectorAll(".chip").forEach(c =>
+    c.classList.toggle("sel", parseFloat(c.dataset.m) === m));
+}
+function syncReadout(){
+  const Q = QS[order[qi]];
+  $("exp-val").textContent = e;
+  const v = m * Math.pow(10, e);
+  $("readout").innerHTML = fmt(m) + " × 10<sup>" + e + "</sup> <span class='unit'>" + Q.u + "</span>";
+  const ind = indian(v);
+  $("human").textContent = "= " + words(v) + (ind ? " · " + ind : "");
+}
+function lockIn(){
+  const Q = QS[order[qi]];
+  const guess = m * Math.pow(10, e);
+  const s = Math.log10(guess) - Math.log10(Q.a);
+  const abs = Math.abs(s);
+  const pts = Math.max(0, Math.round(100 * (1 - abs / 3)));
+  score += pts;
+  results.push({s, pts});
+  const grade = abs <= 0.33 ? ["BULLSEYE", "var(--good)"]
+              : abs <= 1.0  ? ["RIGHT BALLPARK", "var(--cyan)"]
+              : abs <= 2.0  ? ["OFF BY AN ORDER", "var(--warm)"]
+              :               ["RECALIBRATE", "var(--bad)"];
+  $("r-num").textContent = "Q " + (qi + 1) + " / " + ROUND;
+  $("r-score").textContent = "score " + score;
+  $("r-grade").textContent = grade[0];
+  $("r-grade").style.color = grade[1];
+  $("r-pts").textContent = "+" + pts + " pts · missed by " + fmt(abs) + " orders " + (abs < 0.05 ? "" : s > 0 ? "(too high)" : "(too low)");
+  $("r-deriv").innerHTML = Q.d;
+  $("btn-next").textContent = qi === ROUND - 1 ? "See results" : "Next";
+  show("scr-reveal");
+  drawAxis(guess, Q.a);
+}
+function next(){
+  qi++;
+  if (qi >= ROUND) showSummary();
+  else showQuiz();
+}
+function showSummary(){
+  const n = results.length;
+  const sumAbs = results.reduce((t, r) => t + Math.abs(r.s), 0);
+  const sumSigned = results.reduce((t, r) => t + r.s, 0);
+  const bulls = results.filter(r => Math.abs(r.s) <= 0.33).length;
+  $("s-score").textContent = score;
+  $("s-miss").textContent = fmt(sumAbs / n);
+  $("s-bulls").textContent = bulls + "/" + n;
+  const bias = sumSigned / n;
+  $("s-verdict").innerHTML =
+    Math.abs(bias) < 0.25
+      ? "Your bias is <b>" + fmt(bias) + "</b> orders: nicely centred. Now shrink the spread."
+      : "You systematically <b>" + (bias > 0 ? "overestimate" : "underestimate") + "</b> by ~" + fmt(Math.abs(bias)) + " orders. Correct for it before you lock in.";
+  const L = life();
+  L.rounds++; L.n += n; L.sumAbs += sumAbs; L.sumSigned += sumSigned;
+  saveLife(L);
+  paintLife("life-sum");
+  show("scr-sum");
+  drawCal();
+}
+function paintLife(id){
+  const L = life();
+  $(id).textContent = L.n ? "lifetime: " + L.rounds + (L.rounds === 1 ? " round" : " rounds") + " · avg miss " + fmt(L.sumAbs / L.n) + " orders · bias " + (L.sumSigned >= 0 ? "+" : "") + fmt(L.sumSigned / L.n) : "";
+}
+
+/* ---------- plotter canvases ---------- */
+function setup(cv){
+  const w = cv.clientWidth || cv.parentNode.clientWidth;
+  const h = parseInt(cv.getAttribute("height"), 10);
+  cv.width = w * dpr; cv.height = h * dpr;
+  cv.style.height = h + "px";
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineWidth = 1;
+  return {ctx, w, h};
+}
+function powLabel(ctx, x, y, exp, color){
+  ctx.fillStyle = color; ctx.textAlign = "left";
+  ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+  const w10 = ctx.measureText("10").width;
+  ctx.font = "8px " + getComputedStyle(document.body).fontFamily;
+  const we = ctx.measureText(String(exp)).width;
+  const x0 = x - (w10 + we) / 2;
+  ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+  ctx.fillText("10", x0, y);
+  ctx.font = "8px " + getComputedStyle(document.body).fontFamily;
+  ctx.fillText(String(exp), x0 + w10, y - 4);
+}
+function drawAxis(guess, truth){
+  const {ctx, w, h} = setup($("cv-axis"));
+  const lg = Math.log10(guess), lt = Math.log10(truth);
+  let lo = Math.floor(Math.min(lg, lt)) - 1, hi = Math.ceil(Math.max(lg, lt)) + 1;
+  while (hi - lo < 5){ lo--; hi++; }
+  const pad = 26, ay = h * 0.58;
+  const X = l => pad + (l - lo) / (hi - lo) * (w - 2 * pad);
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const GRID = css("--grid"), DIM = css("--dim"), CYAN = css("--cyan"), WARM = css("--warm"), INK = css("--ink");
+  // axis + ticks
+  ctx.strokeStyle = GRID;
+  ctx.beginPath(); ctx.moveTo(pad, ay); ctx.lineTo(w - pad, ay); ctx.stroke();
+  const step = hi - lo > 14 ? 3 : hi - lo > 8 ? 2 : 1;
+  for (let p = lo; p <= hi; p++){
+    const x = X(p);
+    ctx.beginPath(); ctx.moveTo(x, ay - 4); ctx.lineTo(x, ay + 4); ctx.stroke();
+    if ((p - lo) % step === 0) powLabel(ctx, x, ay + 18, p, DIM);
+  }
+  // truth: circle below-labelled
+  const xt = X(lt);
+  ctx.strokeStyle = CYAN; ctx.fillStyle = CYAN;
+  ctx.beginPath(); ctx.moveTo(xt, ay); ctx.lineTo(xt, ay + 30); ctx.stroke();
+  ctx.beginPath(); ctx.arc(xt, ay, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.font = "11px " + getComputedStyle(document.body).fontFamily;
+  ctx.textAlign = xt > w * 0.7 ? "right" : xt < w * 0.3 ? "left" : "center";
+  const pt = sciParts(truth);
+  ctx.fillText("truth  " + pt.m + "e" + pt.e, xt, ay + 44);
+  // guess: x above-labelled
+  const xg = X(lg);
+  ctx.strokeStyle = WARM; ctx.fillStyle = WARM;
+  ctx.beginPath(); ctx.moveTo(xg, ay); ctx.lineTo(xg, ay - 30); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(xg - 4, ay - 4); ctx.lineTo(xg + 4, ay + 4);
+  ctx.moveTo(xg + 4, ay - 4); ctx.lineTo(xg - 4, ay + 4);
+  ctx.stroke();
+  ctx.textAlign = xg > w * 0.7 ? "right" : xg < w * 0.3 ? "left" : "center";
+  const pg = sciParts(guess);
+  ctx.fillText("you  " + pg.m + "e" + pg.e, xg, ay - 38);
+  // delta bracket
+  if (Math.abs(lg - lt) > 0.02){
+    const y2 = ay - 54;
+    ctx.strokeStyle = INK; ctx.fillStyle = INK;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(xt, y2); ctx.lineTo(xg, y2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = "center";
+    ctx.fillText("Δ " + fmt(Math.abs(lg - lt)) + " orders", (xt + xg) / 2, y2 - 6);
+  }
+}
+function drawCal(){
+  const {ctx, w, h} = setup($("cv-cal"));
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const GRID = css("--grid"), DIM = css("--dim"), CYAN = css("--cyan"), WARM = css("--warm");
+  const pad = 26, ay = h * 0.5, R = 4;
+  const X = s => pad + (Math.max(-4, Math.min(4, s)) + 4) / 8 * (w - 2 * pad);
+  ctx.strokeStyle = GRID;
+  ctx.beginPath(); ctx.moveTo(pad, ay); ctx.lineTo(w - pad, ay); ctx.stroke();
+  ctx.font = "9px " + getComputedStyle(document.body).fontFamily;
+  for (let p = -4; p <= 4; p++){
+    const x = X(p);
+    ctx.beginPath(); ctx.moveTo(x, ay - 3); ctx.lineTo(x, ay + 3); ctx.stroke();
+    ctx.fillStyle = DIM; ctx.textAlign = "center";
+    ctx.fillText((p > 0 ? "+" : "") + p, x, ay + 16);
+  }
+  // zero line
+  ctx.strokeStyle = DIM;
+  ctx.beginPath(); ctx.moveTo(X(0), ay - 24); ctx.lineTo(X(0), ay + 8); ctx.stroke();
+  ctx.fillStyle = DIM; ctx.textAlign = "left";
+  ctx.fillText("too low", pad, ay - 30);
+  ctx.textAlign = "right";
+  ctx.fillText("too high", w - pad, ay - 30);
+  // dots (jitter vertically by index to avoid overlap)
+  ctx.fillStyle = CYAN;
+  results.forEach((r, i) => {
+    const y = ay - 8 - (i % 3) * 8;
+    ctx.beginPath(); ctx.arc(X(r.s), y, R, 0, Math.PI * 2); ctx.fill();
+  });
+  // mean marker
+  const mean = results.reduce((t, r) => t + r.s, 0) / results.length;
+  const xm = X(mean);
+  ctx.strokeStyle = WARM; ctx.fillStyle = WARM;
+  ctx.beginPath();
+  ctx.moveTo(xm, ay + 22); ctx.lineTo(xm - 5, ay + 32); ctx.lineTo(xm + 5, ay + 32); ctx.closePath();
+  ctx.fill();
+  ctx.textAlign = "center";
+  ctx.fillText("mean " + (mean >= 0 ? "+" : "") + fmt(mean), xm, ay + 44);
+}
+
+/* ---------- wiring ---------- */
+MANTISSAS.forEach(v => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.dataset.m = v; b.textContent = v;
+  b.onclick = () => { m = v; syncChips(); syncReadout(); };
+  $("chips").appendChild(b);
+});
+$("exp").oninput = ev => { e = parseInt(ev.target.value, 10); syncReadout(); };
+$("exp-dn").onclick = () => { e = Math.max(-7, e - 1); $("exp").value = e; syncReadout(); };
+$("exp-up").onclick = () => { e = Math.min(22, e + 1); $("exp").value = e; syncReadout(); };
+$("btn-lock").onclick = lockIn;
+$("btn-next").onclick = next;
+$("btn-start").onclick = () => startRound(false);
+$("btn-again").onclick = () => startRound(false);
+paintLife("life-home");
+
+/* re-render current canvas on resize (headless fires a late resize) */
+window.addEventListener("resize", () => {
+  if ($("scr-reveal").classList.contains("on") && results.length){
+    const Q = QS[order[qi]], r = results[results.length - 1];
+    drawAxis(Q.a * Math.pow(10, r.s), Q.a);
+  }
+  if ($("scr-sum").classList.contains("on") && results.length) drawCal();
+});
+
+/* ---------- screenshot hooks ---------- */
+const shot = (location.hash.match(/shot=(\w+)/) || [])[1];
+if (shot === "quiz"){ startRound(true); }
+else if (shot === "reveal"){ startRound(true); m = 1; e = 7; lockIn(); }
+else if (shot === "summary"){
+  startRound(true);
+  [0.4, -0.8, 0.1, 1.6, -0.3, 0.9, 0.05, -1.2, 2.1, 0.5].forEach((s, i) => results.push({s, pts: Math.max(0, Math.round(100 * (1 - Math.abs(s) / 3)))}));
+  score = results.reduce((t, r) => t + r.pts, 0);
+  showSummary();
+}
+</script>
+<script>
+/* anonymous visit beacon: counts loads + presence heartbeats, no cookies */
+(function(){
+  if (location.protocol === "file:" || location.hostname === "localhost") return;
+  var EP = "https://site-analytics.vaibhavpro9210.workers.dev/ping";
+  var sid = sessionStorage.getItem("va_sid");
+  if (!sid) { sid = Math.random().toString(36).slice(2) + Date.now().toString(36); sessionStorage.setItem("va_sid", sid); }
+  function send(kind){
+    try { navigator.sendBeacon(EP, new Blob([JSON.stringify({sid:sid, page:location.pathname, kind:kind})], {type:"text/plain"})); } catch(e){}
+  }
+  send("load");
+  setInterval(function(){ if (document.visibilityState === "visible") send("beat"); }, 60000);
+})();
+</script>
+</body>
+</html>
