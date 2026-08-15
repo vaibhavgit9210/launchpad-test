@@ -300,7 +300,10 @@ function paintLife(id){
 /* ---------- plotter canvases ---------- */
 function setup(cv){
   const w = cv.clientWidth || cv.parentNode.clientWidth;
-  const h = parseInt(cv.getAttribute("height"), 10);
+  /* cache the CSS height once — assigning cv.height rewrites the attribute,
+     so re-reading it would compound by dpr on every redraw */
+  if (!cv.dataset.h) cv.dataset.h = cv.getAttribute("height");
+  const h = parseInt(cv.dataset.h, 10);
   cv.width = w * dpr; cv.height = h * dpr;
   cv.style.height = h + "px";
   const ctx = cv.getContext("2d");
