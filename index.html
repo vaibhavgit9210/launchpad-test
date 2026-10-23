@@ -83,6 +83,8 @@
   @media (prefers-reduced-motion:reduce){
     .chip,.exp-row button,.btn{transition:none}
   }
+  /* canvas text keeps the browser's default smoothing: body's antialiased would thin it on macOS */
+  canvas{-webkit-font-smoothing:auto}
 </style>
 </head>
 <body>
