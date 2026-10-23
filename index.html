@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08090c">
 <title>andaza · order of magnitude dojo</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2714%27%20fill%3D%27%23060a13%27%2F%3E%3Ctext%20x%3D%2732%27%20y%3D%2746%27%20font-size%3D%2738%27%20text-anchor%3D%27middle%27%3E%F0%9F%8E%AF%3C%2Ftext%3E%3C%2Fsvg%3E">
 <style>
@@ -10,41 +12,61 @@
     --bg:#08090c; --panel:#0e1117; --line:#1c2431; --grid:#263040;
     --ink:#dfe9f5; --dim:#7d8ba0; --cyan:#7fd8ff; --warm:#ffb36b; --good:#8effb1; --bad:#ff8e8e;
     --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    /* glass, the macOS 26+ material: a translucent fill that blurs what is behind it, a bright top rim, a soft drop */
+    --glass:rgba(16,20,28,.6);
+    --blur:blur(24px) saturate(170%);
+    --rim:inset 0 .5px 0 rgba(255,255,255,.2), inset 0 0 0 .5px rgba(255,255,255,.07);
+    --drop:0 10px 30px rgba(0,0,0,.32), 0 1px 3px rgba(0,0,0,.22);
+    color-scheme:dark;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{background:var(--bg);color:var(--ink);font-family:var(--mono);min-height:100%}
-  body{display:flex;justify-content:center;padding:20px 14px 60px}
+  html,body{color:var(--ink);font-family:var(--mono);min-height:100%}
+  html{background:
+    radial-gradient(900px 620px at 8% -12%, rgba(127,216,255,.075), transparent 62%),
+    radial-gradient(820px 620px at 100% 108%, rgba(127,216,255,.035), transparent 60%),
+    var(--bg)}
+  body{display:flex;justify-content:center;-webkit-font-smoothing:antialiased;
+    padding:max(20px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(60px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left))}
   .wrap{width:100%;max-width:640px}
-  header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+  header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:.5px solid rgba(255,255,255,.1);padding-bottom:12px;margin-bottom:20px}
   h1{font-size:20px;letter-spacing:4px;font-weight:600}
   h1 span{color:var(--cyan)}
   .tag{font-size:10px;color:var(--dim);letter-spacing:1px}
   .screen{display:none}
   .screen.on{display:block}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px}
+  .card{background:var(--glass);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-radius:22px;padding:18px;box-shadow:var(--rim),var(--drop)}
   .qmeta{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:12px}
   .qtext{font-size:17px;line-height:1.5;margin-bottom:20px}
   .lbl{font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin:16px 0 8px}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{flex:1;min-width:52px;padding:10px 0;text-align:center;border:1px solid var(--grid);border-radius:6px;background:transparent;color:var(--ink);font-family:var(--mono);font-size:15px;cursor:pointer}
-  .chip.sel{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+  /* mantissa: a segmented control, a recessed capsule track with a raised thumb on the pick */
+  .chips{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(0,0,0,.34);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.07),inset 0 1px 2px rgba(0,0,0,.3)}
+  .chip{flex:1 1 0;min-width:0;padding:9px 0;text-align:center;border:0;border-radius:999px;background:transparent;color:var(--ink);font-family:var(--mono);font-size:15px;cursor:pointer;transition:background-color .15s,color .15s,box-shadow .15s,transform .1s}
+  .chip:hover{background:rgba(255,255,255,.07)}
+  .chip:active{transform:scale(.96)}
+  .chip.sel{background:rgba(127,216,255,.2);color:var(--cyan);box-shadow:inset 0 .5px 0 rgba(255,255,255,.3),inset 0 0 0 .5px rgba(127,216,255,.55),0 1px 3px rgba(0,0,0,.35)}
   input[type=range]{width:100%;accent-color:var(--cyan);height:28px;cursor:pointer}
   .exp-row{display:flex;align-items:center;gap:12px}
-  .exp-row button{width:44px;height:38px;font-size:18px;border:1px solid var(--grid);border-radius:6px;background:transparent;color:var(--ink);cursor:pointer;font-family:var(--mono)}
+  .exp-row button{width:40px;height:40px;flex:none;font-size:18px;border:0;border-radius:50%;background:rgba(255,255,255,.06);box-shadow:inset 0 .5px 0 rgba(255,255,255,.12),inset 0 0 0 .5px rgba(255,255,255,.08);color:var(--ink);cursor:pointer;font-family:var(--mono);transition:background-color .15s,transform .1s}
+  .exp-row button:hover{background:rgba(255,255,255,.11)}
+  .exp-row button:active{transform:scale(.94)}
   .readout{text-align:center;margin:22px 0 6px;font-size:26px}
   .readout sup{font-size:14px;color:var(--cyan)}
   .readout .unit{font-size:13px;color:var(--dim)}
   .human{text-align:center;font-size:12px;color:var(--dim);min-height:16px;margin-bottom:18px}
-  .btn{display:block;width:100%;padding:14px;border:1px solid var(--cyan);border-radius:6px;background:transparent;color:var(--cyan);font-family:var(--mono);font-size:14px;letter-spacing:3px;cursor:pointer;text-transform:uppercase}
-  .btn:active{background:rgba(127,216,255,.1)}
-  .btn.ghost{border-color:var(--grid);color:var(--dim);letter-spacing:2px}
+  .btn{display:block;width:100%;padding:14px;border:0;border-radius:999px;background:var(--cyan);color:#04121b;font-family:var(--mono);font-size:14px;font-weight:600;letter-spacing:3px;cursor:pointer;text-transform:uppercase;
+    box-shadow:inset 0 .5px 0 rgba(255,255,255,.5),0 6px 20px rgba(127,216,255,.2);transition:background-color .15s,transform .1s,box-shadow .2s}
+  .btn:hover{background:#9be2ff;box-shadow:inset 0 .5px 0 rgba(255,255,255,.5),0 8px 26px rgba(127,216,255,.28)}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:rgba(255,255,255,.06);color:var(--dim);letter-spacing:2px;box-shadow:inset 0 .5px 0 rgba(255,255,255,.12),inset 0 0 0 .5px rgba(255,255,255,.08)}
+  .btn.ghost:hover{background:rgba(255,255,255,.1)}
+  button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid rgba(127,216,255,.85);outline-offset:2px}
   canvas{width:100%;display:block;margin:6px 0 14px}
   .grade{font-size:18px;letter-spacing:3px;text-align:center;margin-bottom:4px}
   .pts{text-align:center;font-size:12px;color:var(--dim);margin-bottom:14px}
   .deriv{font-size:13px;line-height:1.6;color:var(--ink);border-left:2px solid var(--cyan);padding:2px 0 2px 12px;margin-bottom:20px}
   .deriv b{color:var(--cyan);font-weight:600}
   .statrow{display:flex;gap:10px;margin:18px 0}
-  .stat{flex:1;border:1px solid var(--line);border-radius:6px;padding:12px;text-align:center}
+  .stat{flex:1;border-radius:16px;padding:12px;text-align:center;background:rgba(255,255,255,.04);box-shadow:inset 0 .5px 0 rgba(255,255,255,.1),inset 0 0 0 .5px rgba(255,255,255,.07)}
   .stat .v{font-size:20px;color:var(--cyan)}
   .stat .k{font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
   .verdict{font-size:13px;line-height:1.6;color:var(--dim);text-align:center;margin:14px 0 20px}
@@ -54,6 +76,13 @@
   .life{font-size:11px;color:var(--dim);text-align:center;margin-top:14px;letter-spacing:1px}
   footer{margin-top:26px;font-size:10px;color:var(--dim);text-align:center;letter-spacing:1px}
   footer a{color:var(--dim)}
+  /* Reduce Transparency (System Settings > Accessibility > Display): solid surfaces, no blur */
+  @media (prefers-reduced-transparency:reduce){
+    .card{background:var(--panel);-webkit-backdrop-filter:none;backdrop-filter:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .chip,.exp-row button,.btn{transition:none}
+  }
 </style>
 </head>
 <body>
